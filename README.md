@@ -1,4 +1,4 @@
-# MovieFinder
+# Movie Explorer
 
 A modern, responsive web application that allows users to search for and discover movies from the TMDB (The Movie Database) API. The application tracks trending searches using Appwrite backend services.
 
