@@ -8,6 +8,7 @@ A modern, responsive web application that allows users to search for and discove
 
 - **Movie Search**: Search for movies using the TMDB API
 - **Trending Movies**: Display trending movies based on user search patterns
+- **Pagination**: Load more movies as you scroll with the "Load More" button
 - **Debounced Search**: Efficiently handle user input with debounced search
 - **Responsive Design**: Built with modern UI principles for all device sizes
 - **Real-time Updates**: Instantly see search results as you type
@@ -68,6 +69,8 @@ npm run dev
 2. Results will appear automatically as you type
 3. The "Trending Movies" section shows the most popular searches
 4. Click on a movie card to view additional details
+5. Scroll to the bottom of the results and click "Load More" to fetch additional pages of movies
+6. Continue loading more results until you reach the end of available content
 
 ## Project Structure
 
@@ -97,6 +100,28 @@ npm run build
 ```
 
 This will generate optimized files in the `dist` directory that can be deployed to any static hosting service.
+
+## Pagination Implementation
+
+The application implements client-side pagination using the TMDB API's page parameter:
+
+1. **Initial Load**: When the app first loads or a new search is performed, it fetches the first page of results
+2. **Load More Button**: A "Load More" button appears at the bottom of the results when more pages are available
+3. **Appending Results**: When the "Load More" button is clicked, the next page is fetched and appended to the existing results
+4. **End of Results**: When there are no more pages available, the "Load More" button is hidden and a message is displayed
+
+This implementation provides several advantages:
+- Reduces initial load time by only fetching data as needed
+- Maintains user context by not replacing the current view
+- Efficiently manages memory by incrementally loading content
+- Provides clear visual feedback about content loading status
+
+### Pagination States
+
+The application maintains several state variables to track pagination:
+- `page`: Current page number
+- `hasMorePages`: Boolean flag indicating if more pages are available
+- `isLoading`: Loading state indicator for user feedback
 
 ## License
 

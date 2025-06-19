@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Search from './Components/Search'
 import Spinner from './Components/Spinner';
+import LoadingSpinner from './Components/LoadingSpinner';
 import MovieCard from './Components/MovieCard';
 import {useDebounce} from 'react-use'
 import { getTrendingMovies, updateSearchCount } from './appwrite';
+import './App.css'
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.TMDB_API_KEY;
@@ -25,18 +27,21 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [trendingMovie, setTrendingMovie] = useState([]);
 
+  const [page, setPage] = useState(1);
+const [hasMorePages, setHasMorePages] = useState(true);
+
 
   useDebounce(()=>setDebouncedSearchTerm(searchTerm) , 1000 , [searchTerm]);
 
-  const fetchMovies = async(query = '')=>{
+  const fetchMovies = async(query = '', pageNumber = 1, isNewSearch = false)=>{
 
     setIsLoading(true);
     seterrorMessage('');
 
     try{
       const endpoint = query ?
-      `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query )}`
-       : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc`;
+      `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query )}&page=${pageNumber}`
+       : `${API_BASE_URL}/discover/movie?sort_by=popularity.desc&page=${pageNumber}`;
 
       const response = await fetch(endpoint , API_OPTIONS);
 
@@ -53,8 +58,16 @@ const App = () => {
         return;
       }
 
-      setMovieList(data.results || []);
+      // Check if we've reached the last page
+      setHasMorePages(pageNumber < data.total_pages);
+      
+      if (isNewSearch) {
+        setMovieList(data.results || []);
+      } else {
+        setMovieList(prev => [...prev, ...(data.results || [])]);
+      }
 
+      
       if(query && data.results.length > 0){
         await updateSearchCount(query, data.results[0]);
       }
@@ -78,7 +91,9 @@ const App = () => {
   }
 
   useEffect(()=>{
-    fetchMovies(debouncedSearchTerm);
+    setPage(1);
+    setHasMorePages(true); // Reset hasMorePages when search term changes
+    fetchMovies(debouncedSearchTerm, 1, true);
   }, [debouncedSearchTerm]);
 
   useEffect(()=>{
@@ -118,17 +133,50 @@ const App = () => {
 
           <h2>All Movies</h2>;
 
-           {  isLoading?(
+           {  isLoading && page === 1 ? (
             <Spinner/>
-           ) : errorMessage?(
+           ) : errorMessage ? (
             <p className="text-red-500">{errorMessage}</p>
            ) : (
-            <ul>
-              {movieList.map((movie) => (
-                < MovieCard key={movie.id} movie={movie} />
-              ))}
-            </ul>
+            <>
+              <ul>
+                {movieList.map((movie) => (
+                  <MovieCard key={movie.id} movie={movie} />
+                ))}
+              </ul>
+              
+              {isLoading && page > 1 && (
+                <div className="loading-more">
+                  <LoadingSpinner size="medium" />
+                  <p>Loading more movies...</p>
+                </div>
+              )}
+              
+              {hasMorePages && !isLoading && movieList.length > 0 && (
+                <button
+                  onClick={() => {
+                    const nextPage = page + 1;
+                    setPage(nextPage);
+                    fetchMovies(debouncedSearchTerm, nextPage);
+                  }}
+                  className="load-more-button"
+                  onMouseEnter={(e) => e.target.textContent = "Show More Movies"}
+                  onMouseLeave={(e) => e.target.textContent = "Load More"}
+                >
+                  Load More
+                </button>
+              )}
+              
+              {!hasMorePages && movieList.length > 0 && (
+                <p className="no-more-results">No more results to load</p>
+              )}
+              
+              {!isLoading && movieList.length === 0 && (
+                <p className="no-results">No movies found. Try another search term.</p>
+              )}
+            </>
            )}
+
         </section>
 
         
